@@ -401,7 +401,7 @@ class SimpleTextAndIcons:
         if im.height != 11:
             sys.exit("%s: image height must be 11px. Seen %d" % (file, im.height))
         buf = array('B')
-        cols = int((im.width + 7) / 8)
+        cols = (im.width + 7) // 8
         for col in range(cols):
             for row in range(11):  # [0..10]
                 byte_val = 0
@@ -411,16 +411,53 @@ class SimpleTextAndIcons:
                     if x < im.width and row < im.height:
                         pixel_color = im.getpixel((x, row))
                         if isinstance(pixel_color, tuple):
-                            monochrome_color = sum(pixel_color[:3]) / len(pixel_color[:3])
+                            monochrome_color = sum(pixel_color[:3]) // len(pixel_color[:3])
                         elif isinstance(pixel_color, int):
                             monochrome_color = pixel_color
                         else:
                             sys.exit("%s: Unknown pixel format detected (%s)!" % (file, pixel_color))
-                        if monochrome_color > 127:
+                        if monochrome_color == 255:
                             bit_val = 1 << (7 - bit)
                         byte_val += bit_val
                 buf.append(byte_val)
         im.close()
+        return buf, cols
+
+    @staticmethod
+    def bitmap_bits(rows: list[int], bits: int):
+        """
+        Use with somethin like
+        [
+            0b11001100110011001100110011001100110011001100,
+            0b11001100110011001100110011001100110011001100,
+            0b00110011001100110011001100110011001100110011,
+            0b00110011001100110011001100110011001100110011,
+            0b11001100110011001100110011001100110011001100,
+            0b11001100110011001100110011001100110011001100,
+            0b00110011001100110011001100110011001100110011,
+            0b00110011001100110011001100110011001100110011,
+            0b11001100110011001100110011001100110011001100,
+            0b11001100110011001100110011001100110011001100,
+            0b00110011001100110011001100110011001100110011,
+        ]
+
+        as an alternative to a PNG.
+        """
+        buf = array('B')
+        assert len(rows) == 11
+
+        cols = (bits + 7) // 8
+        for col in range(cols):
+            for row in range(11):  # [0..10]
+                byte_val = 0
+                for bit in range(8):  # [0..7]
+                    bit_val = 0
+                    x = 8 * col + bit
+                    if x < bits:
+                        pixel_color = ((rows[row] >> (bits - 1 - x)) & 1) << (7 - bit)
+                        byte_val += pixel_color
+                buf.append(byte_val)
+
         return buf, cols
 
     def bitmap(self, arg):
