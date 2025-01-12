@@ -416,48 +416,11 @@ class SimpleTextAndIcons:
                             monochrome_color = pixel_color
                         else:
                             sys.exit("%s: Unknown pixel format detected (%s)!" % (file, pixel_color))
-                        if monochrome_color == 255:
+                        if monochrome_color > 127:
                             bit_val = 1 << (7 - bit)
                         byte_val += bit_val
                 buf.append(byte_val)
         im.close()
-        return buf, cols
-
-    @staticmethod
-    def bitmap_bits(rows: list[int], bits: int):
-        """
-        Use with somethin like
-        [
-            0b11001100110011001100110011001100110011001100,
-            0b11001100110011001100110011001100110011001100,
-            0b00110011001100110011001100110011001100110011,
-            0b00110011001100110011001100110011001100110011,
-            0b11001100110011001100110011001100110011001100,
-            0b11001100110011001100110011001100110011001100,
-            0b00110011001100110011001100110011001100110011,
-            0b00110011001100110011001100110011001100110011,
-            0b11001100110011001100110011001100110011001100,
-            0b11001100110011001100110011001100110011001100,
-            0b00110011001100110011001100110011001100110011,
-        ]
-
-        as an alternative to a PNG.
-        """
-        buf = array('B')
-        assert len(rows) == 11
-
-        cols = (bits + 7) // 8
-        for col in range(cols):
-            for row in range(11):  # [0..10]
-                byte_val = 0
-                for bit in range(8):  # [0..7]
-                    bit_val = 0
-                    x = 8 * col + bit
-                    if x < bits:
-                        pixel_color = ((rows[row] >> (bits - 1 - x)) & 1) << (7 - bit)
-                        byte_val += pixel_color
-                buf.append(byte_val)
-
         return buf, cols
 
     def bitmap(self, arg):
